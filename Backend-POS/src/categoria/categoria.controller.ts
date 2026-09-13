@@ -18,10 +18,10 @@ export class CategoriaController {
     return this.categoriaService.crear(createCategoriaDto);
   }
 
-  @Get('punto/:idPuntoDeVenta')
+  @Get('negocio/:idNegocio')
   @ApiOperation({ summary: 'Listar categorías por punto de venta' })
-  findAll(@Param('idPuntoDeVenta', ParseIntPipe) idPuntoDeVenta: number) {
-    return this.categoriaService.listar(idPuntoDeVenta);
+  findAll(@Param('idNegocio', ParseIntPipe) idNegocio: number) {
+    return this.categoriaService.listar(idNegocio);
   }
 
   @Get(':id')
@@ -42,3 +42,6 @@ export class CategoriaController {
     return this.categoriaService.eliminar(id);
   }
 }
+
+
+

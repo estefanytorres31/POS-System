@@ -16,20 +16,6 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
-    const usuariosExistentes = await this.prisma.usuario.count();
-
-    // Si no existen usuarios, creamos el admin base (como en el original)
-    if (usuariosExistentes === 0) {
-      await this.usuarioService.crearPropietario({
-        nombre: 'Administrador',
-        email: 'admin@gmail.com',
-        password: loginDto.password, // Usa la pass proporcionada para admin inicial
-        pais: 'Perú',
-        cargo: 'Admin',
-        nombreNegocio: 'POS Admin',
-      });
-      loginDto.email = 'admin@gmail.com';
-    }
 
     const usuario = await this.prisma.usuario.findUnique({
       where: { email: loginDto.email },
@@ -39,7 +25,7 @@ export class AuthService {
       throw new UnauthorizedException('Nombre de usuario o contraseña incorrectos');
     }
 
-    if (usuario.eliminado_temporal_fecha === null && usuario.estado === false) {
+    if (usuario.deletedAt === null && usuario.estado === false) {
       throw new UnauthorizedException('La cuenta está eliminada permanentemente');
     }
 
@@ -50,7 +36,7 @@ export class AuthService {
 
     // Borrar sesiones previas del usuario (Lógica del original)
     await this.prisma.sesion.deleteMany({
-      where: { usuario_id: usuario.id },
+      where: { usuarioId: usuario.id },
     });
 
     const payload = {
@@ -67,15 +53,15 @@ export class AuthService {
 
     await this.prisma.sesion.create({
       data: {
-        usuario_id: usuario.id,
+        usuarioId: usuario.id,
         token,
         expiracion,
-        id_puntoDeVenta: usuario.id_puntoDeVenta || 0, // Fallback if no POS
+        puntoDeVentaId: usuario.puntoDeVentaId || 0, // Fallback if no POS
       },
     });
 
     return {
-      usuario_id: usuario.id,
+      usuarioId: usuario.id,
       token,
       nombreNegocio: usuario.nombreNegocio,
       rol: usuario.rol,
@@ -87,7 +73,7 @@ export class AuthService {
     if (decoded && decoded.id) {
       await this.prisma.sesion.deleteMany({
         where: {
-          usuario_id: decoded.id,
+          usuarioId: decoded.id,
           token,
         },
       });
@@ -115,7 +101,7 @@ export class AuthService {
       data: {
         token,
         expiracion,
-        usuario_id: usuario.id,
+        usuarioId: usuario.id,
       },
     });
 
@@ -143,7 +129,7 @@ export class AuthService {
     }
 
     const usuario = await this.prisma.usuario.findUnique({
-      where: { id: resetToken.usuario_id },
+      where: { id: resetToken.usuarioId },
     });
 
     if (!usuario) {
@@ -153,18 +139,18 @@ export class AuthService {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     await this.prisma.usuario.update({
-      where: { id: resetToken.usuario_id },
+      where: { id: resetToken.usuarioId },
       data: { password: hashedNewPassword },
     });
 
     await this.prisma.resetToken.deleteMany({
-      where: { usuario_id: resetToken.usuario_id },
+      where: { usuarioId: resetToken.usuarioId },
     });
 
     // Logout all active sessions for this user
     await this.prisma.sesion.deleteMany({
       where: {
-        usuario_id: usuario.id,
+        usuarioId: usuario.id,
         expiracion: { gt: new Date() },
       },
     });
@@ -172,3 +158,5 @@ export class AuthService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 }
+
+

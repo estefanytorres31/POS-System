@@ -21,3 +21,5 @@ import { UsuarioModule } from '../usuario/usuario.module.js';
   exports: [AuthService, PassportModule],
 })
 export class AuthModule {}
+
+

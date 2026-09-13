@@ -66,5 +66,8 @@
   },
   "overrides": {
     "magic-string": "0.30.5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

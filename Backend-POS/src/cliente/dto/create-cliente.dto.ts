@@ -1,13 +1,46 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateClienteDto {
-  @IsNotEmpty() @IsString() nombre: string;
-  @IsNotEmpty() @IsEmail() email: string;
-  @IsNotEmpty() @IsString() telefono: string;
-  @IsOptional() @IsString() direccion?: string;
-  @IsOptional() @IsString() ciudad?: string;
-  @IsOptional() @IsString() region?: string;
-  @IsOptional() @IsString() pais?: string;
-  @IsNotEmpty() @IsBoolean() estado: boolean;
-  @IsNotEmpty() @IsNumber() id_puntoDeVenta: number;
+  @ApiProperty({ example: 'Juan Perez' })
+  @IsNotEmpty()
+  @IsString()
+  nombre: string;
+
+  @ApiProperty({ example: 'juan@example.com' })
+  @IsNotEmpty()
+  @IsString()
+  email: string;
+
+  @ApiProperty({ example: '999999999' })
+  @IsNotEmpty()
+  @IsString()
+  telefono: string;
+
+  @ApiPropertyOptional({ example: 'Direccion 1' })
+  @IsOptional()
+  @IsString()
+  direccion?: string;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  ciudadId?: number;
+
+  @ApiPropertyOptional({ example: '051' })
+  @IsOptional()
+  @IsString()
+  codigo_postal?: string;
+
+  @ApiProperty({ example: true })
+  @IsNotEmpty()
+  @IsBoolean()
+  estado: boolean;
+
+  @ApiProperty({ example: 1 })
+  @IsNotEmpty()
+  @IsNumber()
+  negocioId: number;
 }
+
+

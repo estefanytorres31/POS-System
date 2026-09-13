@@ -17,9 +17,9 @@ export class DescuentoController {
     return this.descuentoService.crear(createDescuentoDto);
   }
 
-  @Get('punto/:idPunto')
-  findAll(@Param('idPunto', ParseIntPipe) idPunto: number) {
-    return this.descuentoService.listar(idPunto);
+  @Get('negocio/:idNegocio')
+  findAll(@Param('idNegocio', ParseIntPipe) idNegocio: number) {
+    return this.descuentoService.listar(idNegocio);
   }
 
   @Get(':id')
@@ -37,3 +37,6 @@ export class DescuentoController {
     return this.descuentoService.eliminar(id);
   }
 }
+
+
+

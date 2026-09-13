@@ -1,7 +1,26 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreatePuntoDeVentaDto {
-  @IsNotEmpty() @IsString() nombre: string;
-  @IsNotEmpty() @IsString() propietario: string;
-  @IsNotEmpty() @IsBoolean() estado: boolean;
+  @ApiProperty({ example: 1 })
+  @IsNotEmpty()
+  @IsNumber()
+  negocioId: number;
+
+  @ApiProperty({ example: 'Sede Centro' })
+  @IsNotEmpty()
+  @IsString()
+  nombre: string;
+
+  @ApiPropertyOptional({ example: 'Direccion 1' })
+  @IsOptional()
+  @IsString()
+  direccion?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  estado?: boolean;
 }
+
+

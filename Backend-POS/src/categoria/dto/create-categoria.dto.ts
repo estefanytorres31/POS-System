@@ -20,5 +20,8 @@ export class CreateCategoriaDto {
   @ApiProperty({ example: 1 })
   @IsNotEmpty()
   @IsNumber()
-  id_puntoDeVenta: number;
+  negocioId: number;
 }
+
+
+

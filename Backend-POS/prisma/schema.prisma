@@ -1,67 +1,156 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
-
-model PuntoDeVenta {
-  id        Int        @id @default(autoincrement())
-  nombre    String     @db.VarChar(255)
-  propietario String @db.VarChar(255)
-  fecha_creacion DateTime
-  estado Boolean
-  estado_suscripcion Boolean  @default(true)
-  fecha_vencimiento  DateTime?
-
-  categoria Categoria[]
-  articulo Articulo[]
-  descuento Descuento[]
-  cliente Cliente[]
-  usuario Usuario[]
-  impuesto Impuesto[]
-  recibo Recibo[]
-  venta Venta[]
-  sesion Sesion[]
-  detalleVenta DetalleVenta[]
-
-  @@map("puntoDeVenta")
-}
-
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-model Categoria {
-  id        Int        @id @default(autoincrement())
-  nombre    String     @db.VarChar(255)
-  color     String     @db.VarChar(50)
-  estado    Boolean
-  id_puntoDeVenta  Int
-  articulos Articulo[]
+model Pais {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique @db.VarChar(255)
+  codigo String? @unique @db.VarChar(10)
 
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+  provincias Provincia[]
+
+  @@map("pais")
+}
+
+model Provincia {
+  id     Int    @id @default(autoincrement())
+  nombre String @db.VarChar(255)
+  paisId Int    @map("id_pais")
+
+  pais     Pais     @relation(fields: [paisId], references: [id], onDelete: Cascade)
+  ciudades Ciudad[]
+
+  @@unique([nombre, paisId])
+  @@map("provincia")
+}
+
+model Ciudad {
+  id          Int    @id @default(autoincrement())
+  nombre      String @db.VarChar(255)
+  provinciaId Int    @map("id_provincia")
+
+  provincia Provincia @relation(fields: [provinciaId], references: [id], onDelete: Cascade)
+
+  negocios      Negocio[]
+  puntosDeVenta PuntoDeVenta[]
+  clientes      Cliente[]
+  usuarios      Usuario[]
+
+  @@unique([nombre, provinciaId])
+  @@map("ciudad")
+}
+
+model TipoDocumento {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique @db.VarChar(50)
+
+  clientes Cliente[]
+  usuarios Usuario[]
+
+  @@map("tipo_documento")
+}
+
+model Negocio {
+  id                Int               @id @default(autoincrement())
+  nombre            String            @db.VarChar(255)
+  estado            Boolean           @default(true)
+  estadoSuscripcion EstadoSuscripcion @default(Prueba) @map("estado_suscripcion")
+  expiresAt         DateTime?         @map("fecha_vencimiento")
+  createdAt         DateTime          @default(now()) @map("fecha_creacion")
+  updatedAt         DateTime?         @updatedAt @map("fecha_modificacion")
+  deletedAt         DateTime?         @map("eliminado_temporal_fecha")
+
+  direccion    String? @db.VarChar(255)
+  codigoPostal String? @map("codigo_postal") @db.VarChar(50)
+  ciudadId     Int?    @map("id_ciudad")
+
+  ciudad Ciudad? @relation(fields: [ciudadId], references: [id], onDelete: SetNull)
+
+  puntosDeVenta PuntoDeVenta[]
+  usuarios      Usuario[]
+  categorias    Categoria[]
+  articulos     Articulo[]
+  descuentos    Descuento[]
+  clientes      Cliente[]
+  impuestos     Impuesto[]
+
+  @@map("negocio")
+}
+
+enum EstadoSuscripcion {
+  Prueba
+  Activa
+  Vencida
+  Cancelada
+  PagoPendiente
+}
+
+model PuntoDeVenta {
+  id           Int     @id @default(autoincrement())
+  nombre       String  @db.VarChar(255)
+  direccion    String? @db.VarChar(255)
+  codigoPostal String? @map("codigo_postal") @db.VarChar(50)
+  ciudadId     Int?    @map("id_ciudad")
+  negocioId    Int     @map("id_negocio")
+
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
+
+  ciudad  Ciudad? @relation(fields: [ciudadId], references: [id], onDelete: SetNull)
+  negocio Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  inventarios  Inventario[]
+  usuarios     Usuario[]
+  recibos      Recibo[]
+  ventas       Venta[]
+  sesiones     Sesion[]
+  detalleVenta DetalleVenta[]
+  reembolsos   Reembolso[]
+
+  @@map("puntoDeVenta")
+}
+
+model Categoria {
+  id        Int     @id @default(autoincrement())
+  nombre    String  @db.VarChar(255)
+  color     String  @db.VarChar(50)
+  estado    Boolean @default(true)
+  negocioId Int     @map("id_negocio")
+
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
+
+  articulos Articulo[]
+  negocio   Negocio    @relation(fields: [negocioId], references: [id], onDelete: Cascade)
 
   @@map("categoria")
 }
 
 model Descuento {
-  id              Int           @id @default(autoincrement())
-  nombre          String        @db.VarChar(255)
-  tipo_descuento  tipoDescuento
-  valor           Decimal       @db.Decimal(10, 2)
-  valor_calculado Decimal       @db.Decimal(10, 2)
-  estado          Boolean
-  id_puntoDeVenta  Int
+  id             Int           @id @default(autoincrement())
+  nombre         String        @db.VarChar(255)
+  tipoDescuento  tipoDescuento @map("tipo_descuento")
+  valor          Decimal       @db.Decimal(10, 2)
+  valorCalculado Decimal       @map("valor_calculado") @db.Decimal(10, 2)
+  estado         Boolean       @default(true)
+  negocioId      Int           @map("id_negocio")
 
-  ventas          Venta[]
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
 
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+  ventas  Venta[]
+  negocio Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
 
   @@map("descuento")
 }
@@ -72,15 +161,21 @@ enum tipoDescuento {
 }
 
 model Impuesto {
-  id            Int          @id @default(autoincrement())
-  nombre        String       @db.VarChar(255)
-  tasa          Decimal      @db.Decimal(10, 2)
-  tipo_impuesto tipoImpuesto
-  estado        Boolean
-  id_puntoDeVenta  Int
-  ventas        Venta[]
+  id           Int          @id @default(autoincrement())
+  nombre       String       @db.VarChar(255)
+  tasa         Decimal      @db.Decimal(10, 2)
+  tipoImpuesto tipoImpuesto @map("tipo_impuesto")
+  estado       Boolean      @default(true)
+  negocioId    Int          @map("id_negocio")
 
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
+
+  ventas  Venta[]
+  negocio Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@map("impuesto")
 }
 
 enum tipoImpuesto {
@@ -89,56 +184,75 @@ enum tipoImpuesto {
 }
 
 model Usuario {
-  id                       Int       @id @default(autoincrement())
-  nombre                   String   @db.VarChar(255)
-  email                    String    @unique @db.VarChar(255)
-  cargo                    String?    @db.VarChar(255)
-  telefono                 String?    @db.VarChar(255)
-  password                 String    @db.VarChar(255)
-  nombreNegocio            String?    @db.VarChar(255)
-  pais                     String?   @db.VarChar(255)
-  rol                      Rol
-  estado                   Boolean   
-  eliminado_temporal_fecha DateTime?
-  fecha_creacion           DateTime
-  fecha_modificacion       DateTime?
-  id_puntoDeVenta  Int?
+  id            Int     @id @default(autoincrement())
+  nombre        String  @db.VarChar(255)
+  email         String  @unique @db.VarChar(255)
+  cargo         String? @db.VarChar(255)
+  telefono      String? @db.VarChar(255)
+  password      String  @db.VarChar(255)
+  nombreNegocio String? @db.VarChar(255)
+
+  direccion    String? @db.VarChar(255)
+  codigoPostal String? @map("codigo_postal") @db.VarChar(50)
+  ciudadId     Int?    @map("id_ciudad")
+
+  tipoDocumentoId Int?    @map("id_tipo_documento")
+  numeroDocumento String? @map("numero_documento") @db.VarChar(50)
+
+  rol    Rol
+  estado Boolean @default(true)
+
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
+
+  negocioId      Int? @map("id_negocio")
+  puntoDeVentaId Int? @map("id_puntoDeVenta")
 
   resetTokens ResetToken[]
   sesiones    Sesion[]
   ventas      Venta[]
 
-  puntoDeVenta    PuntoDeVenta? @relation(fields: [id_puntoDeVenta], references: [id])
+  ciudad        Ciudad?        @relation(fields: [ciudadId], references: [id], onDelete: SetNull)
+  negocio       Negocio?       @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  puntoDeVenta  PuntoDeVenta?  @relation(fields: [puntoDeVentaId], references: [id], onDelete: SetNull)
+  tipoDocumento TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict)
 
   @@map("usuario")
 }
 
 enum Rol {
-  Admin
+  SuperAdmin
   Propietario
+  Admin
   Empleado
 }
 
 model Articulo {
-  id           Int            @id @default(autoincrement())
-  nombre       String         @db.VarChar(255)
-  tipo_venta   TipoVenta
-  precio       Decimal       @db.Decimal(10, 2)
-  ref          String         @db.VarChar(255)
-  representacion String @default("color")
-  color        String?        @db.VarChar(50)
-  imagen       String?        @db.VarChar(255)
-  stock_actual Int            @default(0)
-  stock_minimo Int            @default(5)
-  id_categoria Int?           @map("id_categoria") @db.Int
-  estado       Boolean
-  id_puntoDeVenta  Int
-  detalles     DetalleVenta[]
-  detalleReembolso DetalleReembolso[]
+  id             Int                @id @default(autoincrement())
+  nombre         String             @db.VarChar(255)
+  tipoVenta      TipoVenta          @map("tipo_venta")
+  precioVenta    Decimal            @map("precio_venta") @db.Decimal(10, 2)
+  precioCosto    Decimal            @map("precio_costo") @db.Decimal(10, 2)
+  ref            String             @db.VarChar(255)
+  representacion TipoRepresentacion @default(Color)
+  color          String?            @db.VarChar(50)
+  imagen         String?            @db.VarChar(255)
+  estado         Boolean            @default(true)
+  categoriaId    Int?               @map("id_categoria") @db.Int
+  negocioId      Int                @map("id_negocio")
 
-  categoria Categoria? @relation(fields: [id_categoria], references: [id])
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
 
+  categoria Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  negocio   Negocio    @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  inventarios Inventario[]
+  detalles    DetalleVenta[]
+
+  @@unique([negocioId, ref])
   @@map("articulo")
 }
 
@@ -147,118 +261,199 @@ enum TipoVenta {
   Unidad
 }
 
+enum TipoRepresentacion {
+  Color
+  Imagen
+}
 
+model Inventario {
+  id             Int @id @default(autoincrement())
+  articuloId     Int @map("id_articulo")
+  puntoDeVentaId Int @map("id_puntoDeVenta")
+  stockActual    Int @default(0) @map("stock_actual")
+  stockMinimo    Int @default(5) @map("stock_minimo")
+
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+
+  articulo     Articulo     @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+  puntoDeVenta PuntoDeVenta @relation(fields: [puntoDeVentaId], references: [id], onDelete: Cascade)
+
+  @@unique([articuloId, puntoDeVentaId])
+  @@map("inventario")
+}
 
 model ResetToken {
   id         Int      @id @default(autoincrement())
   token      String   @db.VarChar(255)
   expiracion DateTime
-  usuario_id Int      @map("usuario_id")
-  usuario    Usuario  @relation(fields: [usuario_id], references: [id])
+  usado      Boolean  @default(false)
+  usuarioId  Int      @map("usuario_id")
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("reset_tokens")
 }
 
 model Sesion {
-  id         Int      @id @default(autoincrement())
-  usuario_id Int      @map("usuario_id")
-  token      String   @db.VarChar(255)
-  expiracion DateTime
-  id_puntoDeVenta Int
+  id             Int      @id @default(autoincrement())
+  usuarioId      Int      @map("usuario_id")
+  token          String   @db.VarChar(255)
+  expiracion     DateTime
+  activa         Boolean  @default(true)
+  puntoDeVentaId Int?     @map("id_puntoDeVenta")
 
-  usuario Usuario @relation(fields: [usuario_id], references: [id])
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  puntoDeVenta PuntoDeVenta? @relation(fields: [puntoDeVentaId], references: [id], onDelete: Cascade)
 
   @@map("sesion")
 }
 
 model Cliente {
-  id            Int     @id @default(autoincrement())
-  nombre        String  @db.VarChar(255)
-  email         String  @unique @db.VarChar(255)
-  telefono      String  @db.VarChar(255)
-  direccion     String?  @db.VarChar(255)
-  ciudad        String?  @db.VarChar(255)
-  region        String?  @db.VarChar(255)
-  pais          String?  @db.VarChar(255)
-  fecha_creacion DateTime
-  fecha_modificacion DateTime?
-  estado        Boolean
-  id_puntoDeVenta  Int
+  id       Int    @id @default(autoincrement())
+  nombre   String @db.VarChar(255)
+  email    String @db.VarChar(255)
+  telefono String @db.VarChar(255)
+
+  direccion    String? @db.VarChar(255)
+  codigoPostal String? @map("codigo_postal") @db.VarChar(50)
+  ciudadId     Int?    @map("id_ciudad")
+
+  tipoDocumentoId Int?    @map("id_tipo_documento")
+  numeroDocumento String? @map("numero_documento") @db.VarChar(50)
+
+  estado    Boolean @default(true)
+  negocioId Int     @map("id_negocio")
+
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  updatedAt DateTime? @updatedAt @map("fecha_modificacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
+
   ventas        Venta[]
+  ciudad        Ciudad?        @relation(fields: [ciudadId], references: [id], onDelete: SetNull)
+  negocio       Negocio        @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  tipoDocumento TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict)
 
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
-
+  @@unique([negocioId, email])
   @@map("cliente")
 }
 
 model Recibo {
-  id Int @id @default(autoincrement())
-  fecha_creacion DateTime @default(now())
-  ref String @db.VarChar(100)
-  monto_reembolsado Decimal? @db.Decimal(10,2)
-  id_venta Int @db.Int @map("id_venta")
-  id_puntoDeVenta  Int
-  valorDescuentoTotal Decimal? @db.Decimal(10,2)
-  valorImpuestoTotal  Decimal? @db.Decimal(10,2)
-  detalles            DetalleReembolso[]
+  id                  Int      @id @default(autoincrement())
+  ref                 String   @db.VarChar(100)
+  ventaId             Int      @map("id_venta") @db.Int
+  puntoDeVentaId      Int      @map("id_puntoDeVenta")
+  valorDescuentoTotal Decimal? @db.Decimal(10, 2)
+  valorImpuestoTotal  Decimal? @db.Decimal(10, 2)
 
-  venta Venta? @relation(fields: [id_venta], references: [id])
+  createdAt DateTime @default(now()) @map("fecha_creacion")
 
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+  venta        Venta        @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  puntoDeVenta PuntoDeVenta @relation(fields: [puntoDeVentaId], references: [id], onDelete: Cascade)
+  reembolsos   Reembolso[]
+
+  @@map("recibo")
 }
-model DetalleVenta {
-  id         Int      @id @default(autoincrement())
-  cantidad   Int
-  precio_unitario Decimal @db.Decimal(10, 2)
-  subtotal   Decimal  @db.Decimal(10, 2)
-  cantidadReembolsadaTotal Int @default(0)
-  articulo   Articulo @relation(fields: [articuloId], references: [id])
-  articuloId Int
-  venta      Venta    @relation(fields: [ventaId], references: [id])
-  ventaId    Int
-  id_puntoDeVenta  Int
 
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+model Reembolso {
+  id               Int     @id @default(autoincrement())
+  ref              String  @db.VarChar(100)
+  montoReembolsado Decimal @db.Decimal(10, 2)
+  reciboId         Int     @map("id_recibo")
+  puntoDeVentaId   Int     @map("id_puntoDeVenta")
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+
+  detalles     DetalleReembolso[]
+  recibo       Recibo             @relation(fields: [reciboId], references: [id], onDelete: Cascade)
+  puntoDeVenta PuntoDeVenta       @relation(fields: [puntoDeVentaId], references: [id], onDelete: Cascade)
+
+  @@map("reembolso")
+}
+
+model DetalleVenta {
+  id                       Int     @id @default(autoincrement())
+  cantidad                 Int
+  precioUnitario           Decimal @map("precio_unitario") @db.Decimal(10, 2)
+  precioCostoUnitario      Decimal @default(0) @map("precio_costo_unitario") @db.Decimal(10, 2)
+  subtotal                 Decimal @db.Decimal(10, 2)
+  cantidadReembolsadaTotal Int     @default(0)
+
+  nombreArticulo String @map("nombre_articulo") @db.VarChar(255)
+
+  articuloId     Int
+  ventaId        Int
+  puntoDeVentaId Int @map("id_puntoDeVenta")
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+
+  articulo           Articulo           @relation(fields: [articuloId], references: [id], onDelete: Restrict)
+  venta              Venta              @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  puntoDeVenta       PuntoDeVenta       @relation(fields: [puntoDeVentaId], references: [id], onDelete: Cascade)
+  detallesReembolsos DetalleReembolso[]
 
   @@map("detalleVenta")
 }
 
 model Venta {
-  id            Int      @id @default(autoincrement())
-  subtotal      Decimal @db.Decimal(10,2)
-  total         Decimal @db.Decimal(10,2)
-  vDescuento    Decimal? @db.Decimal(10,2)
-  VImpuesto     Decimal? @db.Decimal(10,2)
-  tipoPago      TipoPago
-  impuesto      Impuesto? @relation(fields: [impuestoId], references: [id])
-  descuento     Descuento? @relation(fields: [descuentoId], references: [id])
-  cliente       Cliente?   @relation(fields: [clienteId], references: [id])
-  usuario       Usuario   @relation(fields: [usuarioId], references: [id])
-  dineroRecibido Decimal? @db.Decimal(10,2) 
-  cambio        Decimal? @db.Decimal(10,2)
-  detalles      DetalleVenta[]
-  impuestoId    Int?
-  descuentoId   Int?
-  clienteId     Int?
-  usuarioId     Int
-  id_puntoDeVenta  Int
+  id             Int      @id @default(autoincrement())
+  subtotal       Decimal  @db.Decimal(10, 2)
+  total          Decimal  @db.Decimal(10, 2)
+  vDescuento     Decimal? @db.Decimal(10, 2)
+  vImpuesto      Decimal? @map("VImpuesto") @db.Decimal(10, 2)
+  tipoPago       TipoPago
+  dineroRecibido Decimal? @db.Decimal(10, 2)
+  cambio         Decimal? @db.Decimal(10, 2)
 
-  puntoDeVenta    PuntoDeVenta @relation(fields: [id_puntoDeVenta], references: [id])
+  impuestoTasaAplicada   Decimal?       @db.Decimal(10, 2)
+  impuestoTipoAplicado   tipoImpuesto?
+  descuentoTipoAplicado  tipoDescuento?
+  clienteNombreSnapshot  String?        @db.VarChar(255)
+  clienteDocumentoTipo   String?        @db.VarChar(50)
+  clienteDocumentoNumero String?        @db.VarChar(50)
 
-  recibo Recibo[]
+  impuestoId     Int?
+  descuentoId    Int?
+  clienteId      Int?
+  usuarioId      Int
+  puntoDeVentaId Int  @map("id_puntoDeVenta")
+
+  createdAt DateTime  @default(now()) @map("fecha_creacion")
+  deletedAt DateTime? @map("eliminado_temporal_fecha")
+
+  impuesto     Impuesto?    @relation(fields: [impuestoId], references: [id], onDelete: SetNull)
+  descuento    Descuento?   @relation(fields: [descuentoId], references: [id], onDelete: SetNull)
+  cliente      Cliente?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  puntoDeVenta PuntoDeVenta @relation(fields: [puntoDeVentaId], references: [id], onDelete: Restrict)
+
+  detalles DetalleVenta[]
+  recibo   Recibo[]
+
+  @@index([puntoDeVentaId, createdAt])
+  @@map("venta")
 }
 
 enum TipoPago {
   Efectivo
   Tarjeta
 }
+
 model DetalleReembolso {
-  id                Int      @id @default(autoincrement())
-  articuloId        Int
-  reciboId          Int
-  cantidadDevuelta  Int
-  subtotal          Decimal @db.Decimal(10,2)
-  articulo          Articulo @relation(fields: [articuloId], references: [id])
-  recibo            Recibo   @relation(fields: [reciboId], references: [id])
+  id               Int     @id @default(autoincrement())
+  detalleVentaId   Int     @map("id_detalle_venta")
+  reembolsoId      Int     @map("id_reembolso")
+  cantidadDevuelta Int
+  subtotal         Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("fecha_creacion")
+
+  detalleVenta DetalleVenta @relation(fields: [detalleVentaId], references: [id], onDelete: Restrict)
+  reembolso    Reembolso    @relation(fields: [reembolsoId], references: [id], onDelete: Cascade)
+
+  @@map("detalleReembolso")
 }

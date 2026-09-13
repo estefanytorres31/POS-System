@@ -10,8 +10,8 @@ export class CreateDetalleReembolsoDto {
 export class CreateReciboDto {
   @IsNotEmpty() @IsString() ref: string;
   @IsOptional() @IsNumber() monto_reembolsado?: number;
-  @IsNotEmpty() @IsNumber() id_venta: number;
-  @IsNotEmpty() @IsNumber() id_puntoDeVenta: number;
+  @IsNotEmpty() @IsNumber() ventaId: number;
+  @IsNotEmpty() @IsNumber() puntoDeVentaId: number;
   @IsOptional() @IsNumber() valorDescuentoTotal?: number;
   @IsOptional() @IsNumber() valorImpuestoTotal?: number;
 
@@ -20,3 +20,5 @@ export class CreateReciboDto {
   @Type(() => CreateDetalleReembolsoDto)
   detalles: CreateDetalleReembolsoDto[];
 }
+
+

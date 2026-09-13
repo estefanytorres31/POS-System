@@ -19,7 +19,7 @@ export class PuntoDeVentaController {
 
   @Get()
   findAll() {
-    return this.puntoDeVentaService.listar();
+    return this.puntoDeVentaService.listar(1) // TODO: pass negocioId;
   }
 
   @Get(':id')
@@ -37,3 +37,6 @@ export class PuntoDeVentaController {
     return this.puntoDeVentaService.eliminar(id);
   }
 }
+
+
+

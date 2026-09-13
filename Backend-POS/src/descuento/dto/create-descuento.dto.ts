@@ -3,9 +3,12 @@ import { tipoDescuento } from '@prisma/client';
 
 export class CreateDescuentoDto {
   @IsNotEmpty() @IsString() nombre: string;
-  @IsNotEmpty() @IsEnum(tipoDescuento) tipo_descuento: tipoDescuento;
+  @IsNotEmpty() @IsEnum(tipoDescuento) tipoDescuento: tipoDescuento;
   @IsNotEmpty() @IsNumber() valor: number;
-  @IsNotEmpty() @IsNumber() valor_calculado: number;
+  @IsNotEmpty() @IsNumber() valorCalculado: number;
   @IsNotEmpty() @IsBoolean() estado: boolean;
-  @IsNotEmpty() @IsNumber() id_puntoDeVenta: number;
+  @IsNotEmpty() @IsNumber() negocioId: number;
 }
+
+
+

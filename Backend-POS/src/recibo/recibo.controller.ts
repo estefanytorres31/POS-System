@@ -18,7 +18,7 @@ export class ReciboController {
 
   @Get('venta/:idVenta')
   listarPorVenta(@Param('idVenta', ParseIntPipe) idVenta: number, @Req() req: any) {
-    const idPuntoDeVenta = req.user?.id_puntoDeVenta || 0;
+    const idPuntoDeVenta = req.user?.puntoDeVentaId || 0;
     return this.reciboService.listarPorVenta(idVenta, idPuntoDeVenta);
   }
 
@@ -32,3 +32,5 @@ export class ReciboController {
     return this.reciboService.obtenerPorId(id);
   }
 }
+
+

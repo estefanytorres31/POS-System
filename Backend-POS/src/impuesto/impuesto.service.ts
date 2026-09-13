@@ -13,9 +13,9 @@ export class ImpuestoService {
     });
   }
 
-  async listar(id_puntoDeVenta: number) {
+  async listar(negocioId: number) {
     return this.prisma.impuesto.findMany({
-      where: { id_puntoDeVenta },
+      where: { negocioId },
     });
   }
 
@@ -38,3 +38,6 @@ export class ImpuestoService {
     return this.prisma.impuesto.delete({ where: { id } });
   }
 }
+
+
+

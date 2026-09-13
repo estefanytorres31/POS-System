@@ -17,9 +17,9 @@ export class ImpuestoController {
     return this.impuestoService.crear(createImpuestoDto);
   }
 
-  @Get('punto/:idPunto')
-  findAll(@Param('idPunto', ParseIntPipe) idPunto: number) {
-    return this.impuestoService.listar(idPunto);
+  @Get('negocio/:idNegocio')
+  findAll(@Param('idNegocio', ParseIntPipe) idNegocio: number) {
+    return this.impuestoService.listar(idNegocio);
   }
 
   @Get(':id')
@@ -37,3 +37,6 @@ export class ImpuestoController {
     return this.impuestoService.eliminar(id);
   }
 }
+
+
+

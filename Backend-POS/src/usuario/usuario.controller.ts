@@ -63,16 +63,19 @@ export class UsuarioController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Crear un nuevo empleado (solo Propietario)' })
   crearEmpleado(@Body() createUsuarioDto: CreateUsuarioDto, @Req() req: any) {
-    // Assuming req.user is set by JwtAuthGuard and contains id_puntoDeVenta
-    const propietarioIdPuntoDeVenta = req.user?.id_puntoDeVenta || 0;
-    return this.usuarioService.crearEmpleado(createUsuarioDto, propietarioIdPuntoDeVenta);
+    // Assuming req.user is set by JwtAuthGuard and contains negocioId
+    const propietarioidNegocio = req.user?.negocioId || 0;
+    return this.usuarioService.crearEmpleado(createUsuarioDto, propietarioidNegocio);
   }
 
   @Get('empleado/lista')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Listar empleados del punto de venta' })
   listarEmpleados(@Req() req: any) {
-    const idPuntoDeVenta = req.user?.id_puntoDeVenta || 0;
-    return this.usuarioService.listarEmpleados(idPuntoDeVenta);
+    const idNegocio = req.user?.negocioId || 0;
+    return this.usuarioService.listarEmpleados(idNegocio);
   }
 }
+
+
+

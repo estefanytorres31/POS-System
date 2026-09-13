@@ -8,16 +8,34 @@ export class ArticuloService {
   constructor(private prisma: PrismaService) {}
 
   async crear(createArticuloDto: CreateArticuloDto) {
-    return this.prisma.articulo.create({
-      data: createArticuloDto,
+    const { puntoDeVentaId, stockActual, stockMinimo, ...articuloData } = createArticuloDto;
+    
+    // Crear el articulo en el negocio
+    const articulo = await this.prisma.articulo.create({
+      data: { ...articuloData, precioCosto: articuloData.precioCosto || 0, representacion: articuloData.representacion as any },
     });
+
+    // Si se especificó un punto de venta, creamos su inventario inicial allí
+    if (puntoDeVentaId) {
+      await this.prisma.inventario.create({
+        data: {
+          articuloId: articulo.id,
+          puntoDeVentaId,
+          stockActual: stockActual || 0,
+          stockMinimo: stockMinimo || 5,
+        }
+      });
+    }
+
+    return articulo;
   }
 
-  async listar(id_puntoDeVenta: number) {
+  async listar(negocioId: number) {
     return this.prisma.articulo.findMany({
-      where: { id_puntoDeVenta },
+      where: { negocioId },
       include: {
         categoria: true,
+        inventarios: true, // Para poder ver el stock en cada sucursal
       }
     });
   }
@@ -27,6 +45,7 @@ export class ArticuloService {
       where: { id },
       include: {
         categoria: true,
+        inventarios: true,
       }
     });
     if (!articulo) {
@@ -37,16 +56,27 @@ export class ArticuloService {
 
   async editar(id: number, updateArticuloDto: UpdateArticuloDto) {
     await this.obtenerPorId(id);
+    const { puntoDeVentaId, stockActual, stockMinimo, ...articuloData } = updateArticuloDto;
+    
     return this.prisma.articulo.update({
       where: { id },
-      data: updateArticuloDto,
+      data: { ...articuloData, precioCosto: articuloData.precioCosto || 0, representacion: articuloData.representacion as any },
     });
   }
 
   async eliminar(id: number) {
     await this.obtenerPorId(id);
+    
+    // Primero eliminamos los inventarios asociados
+    await this.prisma.inventario.deleteMany({
+      where: { articuloId: id }
+    });
+
     return this.prisma.articulo.delete({
       where: { id },
     });
   }
 }
+
+
+

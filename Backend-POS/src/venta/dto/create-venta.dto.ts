@@ -1,11 +1,12 @@
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, ValidateNested, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TipoPago } from '@prisma/client';
 
 export class CreateDetalleVentaDto {
   @IsNotEmpty() @IsNumber() articuloId: number;
+  @IsNotEmpty() @IsString() nombreArticulo: string;
   @IsNotEmpty() @IsNumber() cantidad: number;
-  @IsNotEmpty() @IsNumber() precio_unitario: number;
+  @IsNotEmpty() @IsNumber() precioUnitario: number;
   @IsNotEmpty() @IsNumber() subtotal: number;
 }
 
@@ -19,7 +20,7 @@ export class CreateVentaDto {
   @IsOptional() @IsNumber() descuentoId?: number;
   @IsOptional() @IsNumber() clienteId?: number;
   @IsNotEmpty() @IsNumber() usuarioId: number;
-  @IsNotEmpty() @IsNumber() id_puntoDeVenta: number;
+  @IsNotEmpty() @IsNumber() puntoDeVentaId: number;
   @IsOptional() @IsNumber() dineroRecibido?: number;
   @IsOptional() @IsNumber() cambio?: number;
 
@@ -28,3 +29,6 @@ export class CreateVentaDto {
   @Type(() => CreateDetalleVentaDto)
   detalles: CreateDetalleVentaDto[];
 }
+
+
+

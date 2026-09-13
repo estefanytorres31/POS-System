@@ -21,15 +21,20 @@ export class VentaService {
           data: {
             ...detalle,
             ventaId: venta.id,
-            id_puntoDeVenta: venta.id_puntoDeVenta,
+            puntoDeVentaId: venta.puntoDeVentaId,
           },
         });
 
-        // Actualizar stock del articulo
-        await prisma.articulo.update({
-          where: { id: detalle.articuloId },
+        // Actualizar stock del inventario
+        await prisma.inventario.update({
+          where: {
+            articuloId_puntoDeVentaId: {
+              articuloId: detalle.articuloId,
+              puntoDeVentaId: venta.puntoDeVentaId,
+            }
+          },
           data: {
-            stock_actual: {
+            stockActual: {
               decrement: detalle.cantidad,
             },
           },
@@ -40,9 +45,9 @@ export class VentaService {
     });
   }
 
-  async listar(id_puntoDeVenta: number) {
+  async listar(puntoDeVentaId: number) {
     return this.prisma.venta.findMany({
-      where: { id_puntoDeVenta },
+      where: { puntoDeVentaId },
       include: {
         detalles: true,
         cliente: true,
@@ -66,3 +71,5 @@ export class VentaService {
     return venta;
   }
 }
+
+

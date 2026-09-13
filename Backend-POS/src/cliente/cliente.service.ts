@@ -11,14 +11,14 @@ export class ClienteService {
     return this.prisma.cliente.create({
       data: {
         ...createClienteDto,
-        fecha_creacion: new Date(),
+        createdAt: new Date(),
       },
     });
   }
 
-  async listar(id_puntoDeVenta: number) {
+  async listar(negocioId: number) {
     return this.prisma.cliente.findMany({
-      where: { id_puntoDeVenta },
+      where: { negocioId },
     });
   }
 
@@ -32,7 +32,7 @@ export class ClienteService {
     await this.obtenerPorId(id);
     return this.prisma.cliente.update({
       where: { id },
-      data: { ...updateClienteDto, fecha_modificacion: new Date() },
+      data: { ...updateClienteDto, updatedAt: new Date() },
     });
   }
 
@@ -41,3 +41,6 @@ export class ClienteService {
     return this.prisma.cliente.delete({ where: { id } });
   }
 }
+
+
+

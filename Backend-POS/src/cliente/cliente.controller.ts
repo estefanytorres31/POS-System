@@ -17,9 +17,9 @@ export class ClienteController {
     return this.clienteService.crear(createClienteDto);
   }
 
-  @Get('punto/:idPunto')
-  findAll(@Param('idPunto', ParseIntPipe) idPunto: number) {
-    return this.clienteService.listar(idPunto);
+  @Get('negocio/:idNegocio')
+  findAll(@Param('idNegocio', ParseIntPipe) idNegocio: number) {
+    return this.clienteService.listar(idNegocio);
   }
 
   @Get(':id')
@@ -37,3 +37,6 @@ export class ClienteController {
     return this.clienteService.eliminar(id);
   }
 }
+
+
+

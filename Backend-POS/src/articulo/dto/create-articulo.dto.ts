@@ -11,12 +11,17 @@ export class CreateArticuloDto {
   @ApiProperty({ enum: TipoVenta, example: TipoVenta.Unidad })
   @IsNotEmpty()
   @IsEnum(TipoVenta)
-  tipo_venta: TipoVenta;
+  tipoVenta: TipoVenta;
 
   @ApiProperty({ example: 1.5 })
   @IsNotEmpty()
   @IsNumber()
-  precio: number;
+  precioVenta: number;
+
+  @ApiPropertyOptional({ example: 1.0 })
+  @IsOptional()
+  @IsNumber()
+  precioCosto?: number;
 
   @ApiProperty({ example: 'REF123' })
   @IsNotEmpty()
@@ -26,7 +31,7 @@ export class CreateArticuloDto {
   @ApiPropertyOptional({ example: 'color' })
   @IsOptional()
   @IsString()
-  representacion?: string;
+  representacion?: 'Color' | 'Imagen';
 
   @ApiPropertyOptional({ example: '#00ff00' })
   @IsOptional()
@@ -41,17 +46,17 @@ export class CreateArticuloDto {
   @ApiPropertyOptional({ example: 100 })
   @IsOptional()
   @IsNumber()
-  stock_actual?: number;
+  stockActual?: number;
 
   @ApiPropertyOptional({ example: 10 })
   @IsOptional()
   @IsNumber()
-  stock_minimo?: number;
+  stockMinimo?: number;
 
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
   @IsNumber()
-  id_categoria?: number;
+  categoriaId?: number;
 
   @ApiProperty({ example: true })
   @IsNotEmpty()
@@ -61,5 +66,13 @@ export class CreateArticuloDto {
   @ApiProperty({ example: 1 })
   @IsNotEmpty()
   @IsNumber()
-  id_puntoDeVenta: number;
+  negocioId: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  puntoDeVentaId?: number;
 }
+
+
+

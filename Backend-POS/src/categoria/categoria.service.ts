@@ -13,9 +13,9 @@ export class CategoriaService {
     });
   }
 
-  async listar(id_puntoDeVenta: number) {
+  async listar(negocioId: number) {
     return this.prisma.categoria.findMany({
-      where: { id_puntoDeVenta },
+      where: { negocioId },
     });
   }
 
@@ -44,3 +44,6 @@ export class CategoriaService {
     });
   }
 }
+
+
+

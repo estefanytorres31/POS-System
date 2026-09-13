@@ -13,9 +13,9 @@ export class DescuentoService {
     });
   }
 
-  async listar(id_puntoDeVenta: number) {
+  async listar(negocioId: number) {
     return this.prisma.descuento.findMany({
-      where: { id_puntoDeVenta },
+      where: { negocioId },
     });
   }
 
@@ -38,3 +38,6 @@ export class DescuentoService {
     return this.prisma.descuento.delete({ where: { id } });
   }
 }
+
+
+

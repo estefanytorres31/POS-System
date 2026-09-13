@@ -10,6 +10,7 @@ import { DescuentoModule } from './descuento/descuento.module.js';
 import { ImpuestoModule } from './impuesto/impuesto.module.js';
 import { PuntoDeVentaModule } from './punto-de-venta/punto-de-venta.module.js';
 import { VentaModule } from './venta/venta.module.js';
+import { NegocioModule } from './negocio/negocio.module.js';
 import { ReciboModule } from './recibo/recibo.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -23,15 +24,20 @@ import { ScheduleModule } from '@nestjs/schedule';
     UsuarioModule, 
     AuthModule, 
     PuntoDeVentaModule,
+    NegocioModule,
     CategoriaModule, 
     ArticuloModule,
     ClienteModule,
     DescuentoModule,
     ImpuestoModule,
     VentaModule,
+    NegocioModule,
     ReciboModule,
   ],
   controllers: [],
   providers: [],
 })
 export class AppModule {}
+
+
+

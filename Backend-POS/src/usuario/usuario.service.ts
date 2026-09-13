@@ -20,21 +20,29 @@ export class UsuarioService {
     if (usuariosExistentes === 0) {
       rolAsignado = 'Admin';
     } else {
-      // Logic for Punto de venta
+      // Logic for Negocio
       if (createDto.nombreNegocio) {
-        await this.prisma.puntoDeVenta.create({
+        const nuevoNegocio = await this.prisma.negocio.create({
           data: {
             nombre: createDto.nombreNegocio,
-            propietario: createDto.nombre,
-            fecha_creacion: new Date(),
+            createdAt: new Date(),
             estado: true,
+            estadoSuscripcion: 'Activa',
           },
+        });
+        
+        // Creamos una sucursal por defecto para el negocio
+        await this.prisma.puntoDeVenta.create({
+          data: {
+            nombre: 'Sede Principal',
+            negocioId: nuevoNegocio.id,
+          }
         });
       }
     }
 
-    const pos = createDto.nombreNegocio
-      ? await this.prisma.puntoDeVenta.findFirst({
+    const negocio = createDto.nombreNegocio
+      ? await this.prisma.negocio.findFirst({
           where: { nombre: createDto.nombreNegocio },
           orderBy: { id: 'desc' },
         })
@@ -46,20 +54,22 @@ export class UsuarioService {
       data: {
         nombre: createDto.nombre,
         email: createDto.email,
-        pais: createDto.pais,
+        ciudadId: createDto.ciudadId,
+        direccion: createDto.direccion,
+        codigoPostal: createDto.codigo_postal,
         password: hashedPassword,
         nombreNegocio: createDto.nombreNegocio,
         rol: rolAsignado,
         telefono: createDto.telefono,
         cargo: 'Gerente',
         estado: true,
-        fecha_creacion: new Date(),
-        id_puntoDeVenta: pos ? pos.id : undefined,
+        createdAt: new Date(),
+        negocioId: negocio ? negocio.id : undefined,
       },
     });
   }
 
-  async crearEmpleado(createDto: CreateUsuarioDto, propietarioIdPuntoDeVenta: number) {
+  async crearEmpleado(createDto: CreateUsuarioDto, propietarioidNegocio: number) {
     if (createDto.rol !== 'Empleado') {
       throw new BadRequestException('El rol debe ser Empleado');
     }
@@ -82,11 +92,13 @@ export class UsuarioService {
         cargo: createDto.cargo,
         telefono: createDto.telefono,
         password: hashedPassword,
-        pais: createDto.pais,
+        ciudadId: createDto.ciudadId,
+        direccion: createDto.direccion,
+        codigoPostal: createDto.codigo_postal,
         rol: 'Empleado',
-        id_puntoDeVenta: propietarioIdPuntoDeVenta,
+        negocioId: propietarioidNegocio,
         estado: true,
-        fecha_creacion: new Date(),
+        createdAt: new Date(),
       },
     });
 
@@ -101,12 +113,12 @@ export class UsuarioService {
     return newUser;
   }
 
-  async listarEmpleados(idPuntoDeVenta: number) {
+  async listarEmpleados(idNegocio: number) {
     return this.prisma.usuario.findMany({
       where: {
         rol: 'Empleado',
         estado: true,
-        id_puntoDeVenta: idPuntoDeVenta,
+        negocioId: idNegocio,
       },
       select: {
         id: true,
@@ -115,7 +127,7 @@ export class UsuarioService {
         cargo: true,
         telefono: true,
         estado: true,
-        fecha_creacion: true,
+        createdAt: true,
       },
     });
   }
@@ -139,16 +151,12 @@ export class UsuarioService {
         password: updateDto.password
           ? await bcrypt.hash(updateDto.password, 10)
           : undefined,
-        fecha_modificacion: new Date(),
+        updatedAt: new Date(),
       },
     });
 
-    if (usuarioExistente.rol === 'Propietario' && updatedUsuario.id_puntoDeVenta) {
-      await this.prisma.puntoDeVenta.update({
-        where: { id: usuarioExistente.id_puntoDeVenta! },
-        data: { propietario: updatedUsuario.nombre },
-      });
-    }
+    // The propietario field was removed from the schema.
+    // Negocios simply contain Propietarios via the negocioId relationship.
 
     return updatedUsuario;
   }
@@ -180,7 +188,7 @@ export class UsuarioService {
   async eliminarTemporalmente(id: number) {
     const usuario = await this.prisma.usuario.findUnique({ where: { id } });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
-    if (!usuario.estado && usuario.eliminado_temporal_fecha) {
+    if (!usuario.estado && usuario.deletedAt) {
       throw new BadRequestException('La cuenta ya está eliminada temporalmente');
     }
 
@@ -188,7 +196,7 @@ export class UsuarioService {
       where: { id },
       data: {
         estado: false,
-        eliminado_temporal_fecha: new Date(),
+        deletedAt: new Date(),
       },
     });
 
@@ -197,7 +205,7 @@ export class UsuarioService {
 
     // Logout all active sessions for this user
     await this.prisma.sesion.deleteMany({
-      where: { usuario_id: id },
+      where: { usuarioId: id },
     });
 
     return res;
@@ -207,14 +215,14 @@ export class UsuarioService {
     const usuario = await this.prisma.usuario.findUnique({ where: { id } });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
     
-    if (usuario.eliminado_temporal_fecha !== null) {
+    if (usuario.deletedAt !== null) {
       const unaSemana = 7 * 24 * 60 * 60 * 1000;
-      const fechaEliminacion = new Date(usuario.eliminado_temporal_fecha).getTime();
+      const fechaEliminacion = new Date(usuario.deletedAt).getTime();
 
       if (Date.now() - fechaEliminacion <= unaSemana) {
         await this.prisma.usuario.update({
           where: { id },
-          data: { estado: true, eliminado_temporal_fecha: null },
+          data: { estado: true, deletedAt: null },
         });
 
         await this.mailService.enviarCorreoRestauracion(usuario.email, usuario.nombre);
@@ -232,14 +240,14 @@ export class UsuarioService {
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
 
     await this.prisma.sesion.deleteMany({
-      where: { usuario_id: id },
+      where: { usuarioId: id },
     });
 
     await this.mailService.enviarCorreoEliminacionPermanente(usuario.email, usuario.nombre);
 
     const res = await this.prisma.usuario.update({
       where: { id },
-      data: { estado: false, eliminado_temporal_fecha: null }, 
+      data: { estado: false, deletedAt: null }, 
     });
 
     return res;
@@ -254,7 +262,7 @@ export class UsuarioService {
     await this.prisma.usuario.deleteMany({
       where: {
         estado: false,
-        eliminado_temporal_fecha: { lte: fechaUnaSemanaAtras },
+        deletedAt: { lte: fechaUnaSemanaAtras },
       },
     });
 

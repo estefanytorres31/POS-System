@@ -18,10 +18,10 @@ export class ArticuloController {
     return this.articuloService.crear(createArticuloDto);
   }
 
-  @Get('punto/:idPuntoDeVenta')
+  @Get('negocio/:idNegocio')
   @ApiOperation({ summary: 'Listar artículos por punto de venta' })
-  findAll(@Param('idPuntoDeVenta', ParseIntPipe) idPuntoDeVenta: number) {
-    return this.articuloService.listar(idPuntoDeVenta);
+  findAll(@Param('idNegocio', ParseIntPipe) idNegocio: number) {
+    return this.articuloService.listar(idNegocio);
   }
 
   @Get(':id')
@@ -42,3 +42,6 @@ export class ArticuloController {
     return this.articuloService.eliminar(id);
   }
 }
+
+
+

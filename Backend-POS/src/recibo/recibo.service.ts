@@ -7,7 +7,7 @@ export class ReciboService {
   constructor(private prisma: PrismaService) {}
 
   async crear(createReciboDto: CreateReciboDto) {
-    const { detalles, ...reciboData } = createReciboDto;
+    const { detalles, monto_reembolsado, ...reciboData } = createReciboDto;
 
     return this.prisma.$transaction(async (prisma) => {
       // 1. Crear el recibo
@@ -15,31 +15,52 @@ export class ReciboService {
         data: reciboData,
       });
 
-      // 2. Crear detalles de reembolso y actualizar stock / venta
-      for (const detalle of detalles) {
-        await prisma.detalleReembolso.create({
+      // 2. Crear el reembolso si hay detalles
+      if (detalles && detalles.length > 0) {
+        const reembolso = await prisma.reembolso.create({
           data: {
-            ...detalle,
+            ref: 'RB-' + reciboData.ref,
+            montoReembolsado: monto_reembolsado || 0,
             reciboId: recibo.id,
-          },
+            puntoDeVentaId: recibo.puntoDeVentaId,
+          }
         });
 
-        // Actualizar stock
-        await prisma.articulo.update({
-          where: { id: detalle.articuloId },
-          data: {
-            stock_actual: {
-              increment: detalle.cantidadDevuelta,
+        // 3. Crear detalles de reembolso y actualizar stock / venta
+        for (const detalle of detalles) {
+          const detalleVenta = await prisma.detalleVenta.findFirst({
+            where: { ventaId: recibo.ventaId, articuloId: detalle.articuloId },
+          });
+
+          if (!detalleVenta) {
+            throw new NotFoundException(`No se encontró el artículo ${detalle.articuloId} en la venta`);
+          }
+
+          await prisma.detalleReembolso.create({
+            data: {
+              detalleVentaId: detalleVenta.id,
+              reembolsoId: reembolso.id,
+              cantidadDevuelta: detalle.cantidadDevuelta,
+              subtotal: detalle.subtotal,
             },
-          },
-        });
-        
-        // Actualizar detalle de venta para cantidad reembolsada
-        const detalleVenta = await prisma.detalleVenta.findFirst({
-          where: { ventaId: recibo.id_venta, articuloId: detalle.articuloId },
-        });
+          });
 
-        if (detalleVenta) {
+          // Actualizar stock del inventario
+          await prisma.inventario.update({
+            where: {
+              articuloId_puntoDeVentaId: {
+                articuloId: detalle.articuloId,
+                puntoDeVentaId: recibo.puntoDeVentaId,
+              }
+            },
+            data: {
+              stockActual: {
+                increment: detalle.cantidadDevuelta,
+              },
+            },
+          });
+          
+          // Actualizar detalle de venta para cantidad reembolsada
           await prisma.detalleVenta.update({
             where: { id: detalleVenta.id },
             data: {
@@ -55,22 +76,30 @@ export class ReciboService {
     });
   }
 
-  async listar(id_puntoDeVenta: number) {
+  async listar(puntoDeVentaId: number) {
     return this.prisma.recibo.findMany({
-      where: { id_puntoDeVenta },
+      where: { puntoDeVentaId },
       include: {
-        detalles: true,
+        reembolsos: {
+          include: {
+            detalles: true,
+          }
+        },
         venta: true,
       },
     });
   }
 
-  async listarPorVenta(id_venta: number, id_puntoDeVenta: number) {
+  async listarPorVenta(ventaId: number, puntoDeVentaId: number) {
     return this.prisma.recibo.findMany({
-      where: { id_venta, id_puntoDeVenta },
+      where: { ventaId, puntoDeVentaId },
       include: {
-        detalles: {
-          include: { articulo: true }
+        reembolsos: {
+          include: {
+            detalles: {
+              include: { detalleVenta: { include: { articulo: true } } }
+            }
+          }
         }
       }
     });
@@ -80,8 +109,12 @@ export class ReciboService {
     const recibo = await this.prisma.recibo.findUnique({
       where: { id },
       include: {
-        detalles: {
-          include: { articulo: true }
+        reembolsos: {
+          include: {
+            detalles: {
+              include: { detalleVenta: { include: { articulo: true } } }
+            }
+          }
         },
         venta: true,
       },
@@ -90,3 +123,5 @@ export class ReciboService {
     return recibo;
   }
 }
+
+
